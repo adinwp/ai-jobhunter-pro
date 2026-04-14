@@ -69,7 +69,39 @@ DATE_MAPPING = {
     "Semua waktu": "", "Sebulan terakhir": "date_posted:month", "Seminggu terakhir": "date_posted:week", "3 Hari terakhir": "date_posted:3days", "24 Jam terakhir": "date_posted:today"
 }
 
+# ==========================================
+# 📖 WELCOME DIALOG (POP-UP PANDUAN)
+# ==========================================
+@st.dialog("📖 Panduan Memulai (Read Me First)")
+def welcome_dialog():
+    st.markdown("""
+    ### Selamat datang di AI Job Hunter Pro! 🚀
+    Sebelum mulai berburu loker, pastikan kamu sudah menyiapkan **2 Kunci (API Key)** gratis. Ini fungsinya agar aplikasi bisa berjalan mandiri menggunakan kuota gratismu:
+    
+    1. **🔑 Groq API Key (Mesin AI):**
+       - Buka [console.groq.com](https://console.groq.com)
+       - Login pakai akun Google, lalu ke menu **API Keys** -> klik **Create API Key**.
+    
+    2. **🔑 SerpAPI Key (Mesin Pencari Loker):**
+       - Buka [serpapi.com](https://serpapi.com)
+       - Daftar akun gratis, lalu ke menu **Dashboard** -> copy **Your Private API Key**.
+       
+    ### 🛡️ Tips Menggunakan Filter:
+    - **Waktu Posting:** Selalu gunakan filter waktu (misal: *Seminggu terakhir*) agar terhindar dari loker lama (zombie).
+    - **Excluded Keywords:** Masukkan kata kunci industri yang ingin dihindari (misal: *Alcohol, Gambling, Betting*). AI akan otomatis melewati loker tersebut.
+    - **Target Gaji:** Masukkan ekspektasi gajimu. Jika loker mencantumkan gaji di bawah target, AI akan memberi peringatan.
+    """)
+    if st.button("Mengerti & Mulai Berburu!", use_container_width=True):
+        st.session_state.welcome_shown = True
+        st.rerun()
+
+# Cek apakah user baru pertama kali buka web
+if "welcome_shown" not in st.session_state:
+    st.session_state.welcome_shown = False
+
+# ==========================================
 # --- SIDEBAR ---
+# ==========================================
 with st.sidebar:
     lang_choice = st.selectbox("🌐 Language", ["English", "Bahasa Indonesia"])
     t = TEXT[lang_choice]
@@ -145,6 +177,11 @@ def drafting_agent(job_desc, reasons, language, groq_key):
 # 🚀 MAIN AREA (TABBED VIEW)
 # ==========================================
 st.title(t["title"])
+
+# Tampilkan pop-up jika baru pertama buka
+if not st.session_state.welcome_shown:
+    welcome_dialog()
+
 tab1, tab2 = st.tabs([t["tab_search"], t["tab_history"]])
 
 with tab1:
@@ -164,7 +201,6 @@ with tab1:
                 except: 
                     pass
             
-            # --- BAGIAN INI YANG TADI KEGESER ---
             st.info(f"🔍 Searching for {query_input}...")
             selected_date_chip = DATE_MAPPING[date_choice]
             loker_raw = fetch_loker(query_input, location_input, work_type, selected_date_chip, user_serp_key)
