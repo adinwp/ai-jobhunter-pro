@@ -90,6 +90,10 @@ def welcome_dialog():
     - **Waktu Posting:** Selalu gunakan filter waktu (misal: *Seminggu terakhir*) agar terhindar dari loker lama (zombie).
     - **Excluded Keywords:** Masukkan kata kunci industri yang ingin dihindari (misal: *Alcohol, Gambling, Betting*). AI akan otomatis melewati loker tersebut.
     - **Target Gaji:** Masukkan ekspektasi gajimu. Jika loker mencantumkan gaji di bawah target, AI akan memberi peringatan.
+
+    ---
+    🔒 **Jaminan Privasi & Keamanan Data:**
+    *File CV (PDF) yang kamu unggah **TIDAK DISIMPAN** di server kami. File hanya diproses sementara di memori perangkatmu dan akan otomatis terhapus saat kamu menutup halaman ini.*
     """)
     if st.button("Mengerti & Mulai Berburu!", use_container_width=True):
         st.session_state.welcome_shown = True
@@ -145,17 +149,40 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
     try:
         search_query = f"{query} {location}"
         if w_type != "All": search_query += f" {w_type}"
+        
+        # Opsi: Lo bisa nambahin operator minus bawaan Google langsung di query
+        search_query += " -jooble -trovit -kora" 
+        
         params = {"engine": "google_jobs", "q": search_query, "hl": "id", "gl": "id", "api_key": serp_key}
         if date_chip: params["chips"] = date_chip
         response = requests.get("https://serpapi.com/search.json", params=params).json()
+        
         jobs = []
+        # Daftar situs "calo" yang link-nya suka muter-muter
+        BANNED_SITES = ["jooble", "trovit", "id.kora", "jobisjob", "naukri"] 
+        
         if "jobs_results" in response:
-            for job in response["jobs_results"][:5]:
+            for job in response["jobs_results"]:
                 link = job.get("apply_options", [{}])[0].get("link", "")
-                jobs.append({"title": job.get("title", ""), "company": job.get("company_name", ""), "description": job.get("description", ""), "link": link})
+                
+                # Cek apakah link mengandung nama situs calo
+                is_banned = any(banned in link.lower() for banned in BANNED_SITES)
+                
+                # Kalau link-nya bersih, baru masukin ke list loker (Maksimal ambil 5)
+                if not is_banned and link:
+                    jobs.append({
+                        "title": job.get("title", ""), 
+                        "company": job.get("company_name", ""), 
+                        "description": job.get("description", ""), 
+                        "link": link
+                    })
+                    
+                if len(jobs) >= 5: # Batasi 5 loker bersih saja
+                    break
+                    
         return jobs
     except: return []
-
+        
 def screening_agent(job_desc, cv_text, language, excluded, min_sal, groq_key):
     try:
         client = Groq(api_key=groq_key)
