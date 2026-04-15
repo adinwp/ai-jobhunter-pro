@@ -150,9 +150,7 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
         search_query = f"{query} {location}"
         if w_type != "All": search_query += f" {w_type}"
         
-        # Opsi: Lo bisa nambahin operator minus bawaan Google langsung di query
-        search_query += " -jooble -trovit -kora" 
-        
+        # HAPUS bagian operator minus (-) di sini biar API Google gak bingung
         params = {"engine": "google_jobs", "q": search_query, "hl": "id", "gl": "id", "api_key": serp_key}
         if date_chip: params["chips"] = date_chip
         response = requests.get("https://serpapi.com/search.json", params=params).json()
@@ -168,7 +166,7 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
                 # Cek apakah link mengandung nama situs calo
                 is_banned = any(banned in link.lower() for banned in BANNED_SITES)
                 
-                # Kalau link-nya bersih, baru masukin ke list loker (Maksimal ambil 5)
+                # Kalau link-nya bersih, masukin ke list
                 if not is_banned and link:
                     jobs.append({
                         "title": job.get("title", ""), 
@@ -177,7 +175,8 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
                         "link": link
                     })
                     
-                if len(jobs) >= 5: # Batasi 5 loker bersih saja
+                # NAIKKIN BATAS JADI 10 (Biar ada cadangan loker kalau banyak yang kena filter calo/duplikat)
+                if len(jobs) >= 10: 
                     break
                     
         return jobs
