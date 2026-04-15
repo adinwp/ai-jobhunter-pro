@@ -104,6 +104,32 @@ if "welcome_shown" not in st.session_state:
     st.session_state.welcome_shown = False
 
 # ==========================================
+# 🔒 SISTEM LOGIN / BETA KEY
+# ==========================================
+BETA_KEY = "PRO2026" # <-- Lo bisa ganti passwordnya sesuka hati
+
+if "access_granted" not in st.session_state:
+    st.session_state.access_granted = False
+
+if not st.session_state.access_granted:
+    st.title("🔒 Closed Beta Access")
+    st.info("Aplikasi AI Job Hunter Pro saat ini sedang dalam fase pengujian terbatas.")
+    
+    pwd_input = st.text_input("Masukkan Kode Akses Beta / Beta Key:", type="password")
+    if st.button("Buka Akses 🚀", use_container_width=True):
+        if pwd_input == BETA_KEY:
+            st.session_state.access_granted = True
+            st.success("Akses Diberikan! Memuat aplikasi...")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error("⚠️ Kode akses salah atau sudah kadaluarsa.")
+    
+    # st.stop() akan menghentikan Streamlit membaca kode ke bawah 
+    # sampai user memasukkan password yang benar
+    st.stop()
+
+# ==========================================
 # --- SIDEBAR ---
 # ==========================================
 with st.sidebar:
