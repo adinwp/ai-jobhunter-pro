@@ -1,8 +1,6 @@
 import streamlit as st
 import os
 import json
-import csv
-import pandas as pd
 import requests
 import PyPDF2
 import re
@@ -70,46 +68,20 @@ DATE_MAPPING = {
 }
 
 # ==========================================
-# 📖 WELCOME DIALOG (POP-UP PANDUAN)
+# 🧠 INISIALISASI SESSION STATE (PENGGANTI CSV)
 # ==========================================
-@st.dialog("📖 Panduan Memulai (Read Me First)")
-def welcome_dialog():
-    st.markdown("""
-    ### Selamat datang di AI Job Hunter Pro! 🚀
-    Sebelum mulai berburu loker, pastikan kamu sudah menyiapkan **2 Kunci (API Key)** gratis. Ini fungsinya agar aplikasi bisa berjalan mandiri menggunakan kuota gratismu:
-    
-    1. **🔑 Groq API Key (Mesin AI):**
-       - Buka [console.groq.com](https://console.groq.com)
-       - Login pakai akun Google, lalu ke menu **API Keys** -> klik **Create API Key**.
-    
-    2. **🔑 SerpAPI Key (Mesin Pencari Loker):**
-       - Buka [serpapi.com](https://serpapi.com)
-       - Daftar akun gratis, lalu ke menu **Dashboard** -> copy **Your Private API Key**.
-       
-    ### 🛡️ Tips Menggunakan Filter:
-    - **Waktu Posting:** Selalu gunakan filter waktu (misal: *Seminggu terakhir*) agar terhindar dari loker lama (zombie).
-    - **Excluded Keywords:** Masukkan kata kunci industri yang ingin dihindari (misal: *Alcohol, Gambling, Betting*). AI akan otomatis melewati loker tersebut.
-    - **Target Gaji:** Masukkan ekspektasi gajimu. Jika loker mencantumkan gaji di bawah target, AI akan memberi peringatan.
-
-    ---
-    🔒 **Jaminan Privasi & Keamanan Data:**
-    *File CV (PDF) yang kamu unggah **TIDAK DISIMPAN** di server kami. File hanya diproses sementara di memori perangkatmu dan akan otomatis terhapus saat kamu menutup halaman ini.*
-    """)
-    if st.button("Mengerti & Mulai Berburu!", use_container_width=True):
-        st.session_state.welcome_shown = True
-        st.rerun()
-
-# Cek apakah user baru pertama kali buka web
-if "welcome_shown" not in st.session_state:
-    st.session_state.welcome_shown = False
+if "history_log" not in st.session_state:
+    st.session_state.history_log = []
 
 # ==========================================
 # 🔒 SISTEM LOGIN / BETA KEY
 # ==========================================
-BETA_KEY = "PRO2026" # <-- Lo bisa ganti passwordnya sesuka hati
+BETA_KEY = "PRO2026"
 
 if "access_granted" not in st.session_state:
     st.session_state.access_granted = False
+if "welcome_shown" not in st.session_state:
+    st.session_state.welcome_shown = False
 
 if not st.session_state.access_granted:
     st.title("🔒 Closed Beta Access")
@@ -124,10 +96,30 @@ if not st.session_state.access_granted:
             st.rerun()
         else:
             st.error("⚠️ Kode akses salah atau sudah kadaluarsa.")
-    
-    # st.stop() akan menghentikan Streamlit membaca kode ke bawah 
-    # sampai user memasukkan password yang benar
     st.stop()
+
+# ==========================================
+# 📖 WELCOME DIALOG (POP-UP PANDUAN)
+# ==========================================
+@st.dialog("📖 Panduan Memulai (Read Me First)")
+def welcome_dialog():
+    st.markdown("""
+    ### Selamat datang di AI Job Hunter Pro! 🚀
+    Sebelum mulai berburu loker, pastikan kamu sudah menyiapkan **2 Kunci (API Key)** gratis.
+    
+    1. **🔑 Groq API Key (Mesin AI):** Buka console.groq.com
+    2. **🔑 SerpAPI Key (Mesin Pencari):** Buka serpapi.com
+    
+    ---
+    🔒 **Jaminan Privasi & Keamanan Data:**
+    *Sistem kami 100% menggunakan memori browser lokal (Session State). File CV (PDF) dan riwayat lamaranmu **TIDAK DISIMPAN** di server kami dan tidak bisa dilihat oleh orang lain. Semua data akan otomatis terhapus saat kamu menutup halaman web ini.*
+    """)
+    if st.button("Mengerti & Mulai Berburu!", use_container_width=True):
+        st.session_state.welcome_shown = True
+        st.rerun()
+
+if not st.session_state.welcome_shown:
+    welcome_dialog()
 
 # ==========================================
 # --- SIDEBAR ---
@@ -142,14 +134,14 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("⚙️ Settings")
-    query_input = st.text_input(t["role"], "")
-    location_input = st.text_input(t["loc"], "")
+    query_input = st.text_input(t["role"], "") # DIKOSONGIN
+    location_input = st.text_input(t["loc"], "") # DIKOSONGIN
     work_type = st.selectbox(t["work_type"], ["All", "Remote", "Hybrid", "On-site"])
     date_choice = st.selectbox(t["date_posted"], t["date_opts"])
     
     st.markdown("---")
     exclude_input = st.text_input(t["exclude"], "Alcohol, Gambling")
-    min_salary = st.number_input(t["min_sal"], value=0, step=1000000)
+    min_salary = st.number_input(t["min_sal"], value=0, step=1000000) # GAJI DEFAULT 0
     min_score = st.slider(t["min"], 50, 100, 75)
     
     st.markdown("---")
@@ -157,20 +149,8 @@ with st.sidebar:
     mulai_btn = st.button(t["btn"], use_container_width=True)
 
 # ==========================================
-# 🧠 FUNGSI AGENT & LOGGING
+# 🧠 FUNGSI AGENT
 # ==========================================
-def save_to_csv(company, position, score, reasons, missing, link):
-    filename = "job_hunting_log.csv"
-    file_exists = os.path.isfile(filename)
-    reasons_str = " | ".join(reasons)
-    missing_str = " | ".join(missing)
-    
-    with open(filename, mode='a', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        if not file_exists:
-            writer.writerow(["Date", "Company", "Position", "Score", "Reasons", "Missing", "Link"])
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M"), company, position, score, reasons_str, missing_str, link])
-
 def fetch_loker(query, location, w_type, date_chip, serp_key):
     try:
         search_query = f"{query} {location}"
@@ -181,10 +161,7 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
         response = requests.get("https://serpapi.com/search.json", params=params).json()
         
         jobs = []
-        
-        # 1. Daftar Hitam (Calo Loker)
         BANNED_SITES = ["jooble", "trovit", "kora", "jobisjob", "naukri", "trabajo", "careerjet", "talent.com", "lokerhq"] 
-        # 2. Daftar Putih (Portal Resmi & Terpercaya)
         PREFERRED_SITES = ["linkedin", "jobstreet", "glints", "kalibrr", "techinasia", "kitalulus", "workable", "lever", "greenhouse"]
 
         if "jobs_results" in response:
@@ -192,14 +169,12 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
                 apply_options = job.get("apply_options", [])
                 best_link = ""
                 
-                # Strategi A: Cari link dari portal terpercaya dulu (Daftar Putih)
                 for option in apply_options:
                     link = option.get("link", "").lower()
                     if any(pref in link for pref in PREFERRED_SITES):
-                        best_link = option.get("link", "") # Ambil link aslinya (bukan yang di-lower)
+                        best_link = option.get("link", "")
                         break 
                 
-                # Strategi B: Kalau nggak ada di Daftar Putih, ambil link apa aja ASAL BUKAN Daftar Hitam
                 if not best_link:
                     for option in apply_options:
                         link = option.get("link", "").lower()
@@ -207,7 +182,6 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
                             best_link = option.get("link", "")
                             break 
                 
-                # Masukkan ke list loker jika berhasil dapat link yang bersih
                 if best_link:
                     jobs.append({
                         "title": job.get("title", ""), 
@@ -216,12 +190,10 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
                         "link": best_link
                     })
                     
-                if len(jobs) >= 10: 
-                    break
-                    
+                if len(jobs) >= 10: break
         return jobs
     except: return []
-        
+
 def screening_agent(job_desc, cv_text, language, excluded, min_sal, groq_key):
     try:
         client = Groq(api_key=groq_key)
@@ -243,11 +215,6 @@ def drafting_agent(job_desc, reasons, language, groq_key):
 # 🚀 MAIN AREA (TABBED VIEW)
 # ==========================================
 st.title(t["title"])
-
-# Tampilkan pop-up jika baru pertama buka
-if not st.session_state.welcome_shown:
-    welcome_dialog()
-
 tab1, tab2 = st.tabs([t["tab_search"], t["tab_history"]])
 
 with tab1:
@@ -260,12 +227,8 @@ with tab1:
             reader = PyPDF2.PdfReader(uploaded_cv)
             cv_text = "".join([p.extract_text() for p in reader.pages])
             
-            seen_links = set()
-            if os.path.isfile("job_hunting_log.csv"):
-                try: 
-                    seen_links = set(pd.read_csv("job_hunting_log.csv")['Link'].dropna().tolist())
-                except: 
-                    pass
+            # --- CEK ANTI-DUPLIKAT DARI SESSION STATE ---
+            seen_links = {log['Link'] for log in st.session_state.history_log}
             
             st.info(f"🔍 Searching for {query_input}...")
             selected_date_chip = DATE_MAPPING[date_choice]
@@ -294,17 +257,27 @@ with tab1:
                                 for m in hasil.get('missing', []): st.markdown(f"- {m}")
                         
                         if skor >= min_score and skor > 0:
-                            save_to_csv(loker['company'], loker['title'], skor, hasil.get('reasons', []), hasil.get('missing', []), loker['link'])
+                            # --- SIMPAN KE SESSION STATE (MEMORI LOKAL) ---
+                            st.session_state.history_log.append({
+                                "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                "Company": loker['company'],
+                                "Position": loker['title'],
+                                "Score": skor,
+                                "Reasons": hasil.get('reasons', []),
+                                "Missing": hasil.get('missing', []),
+                                "Link": loker['link']
+                            })
+                            
                             with st.spinner("Drafting..."):
                                 draf = drafting_agent(loker['description'], hasil.get('reasons'), lang_choice, user_groq_key)
                                 st.text_area(t["draft_lbl"], value=draf, height=150)
 
 with tab2:
     st.subheader(t["tab_history"])
-    if os.path.isfile("job_hunting_log.csv"):
-        df_log = pd.read_csv("job_hunting_log.csv").sort_values(by="Date", ascending=False)
-        
-        for _, row in df_log.iterrows():
+    # --- BACA DARI SESSION STATE ---
+    if st.session_state.history_log:
+        # Menampilkan history dari yang terbaru (reverse)
+        for row in reversed(st.session_state.history_log):
             with st.expander(f"📌 {row['Position']} at {row['Company']} ({row['Date']})"):
                 c1, c2 = st.columns([1, 2])
                 with c1:
@@ -312,14 +285,14 @@ with tab2:
                     st.markdown(f"🔗 [View Job & Apply]({row['Link']})")
                 with c2:
                     st.markdown(t["reasons"])
-                    for r in str(row['Reasons']).split(" | "): st.markdown(f"- {r}")
-                    if pd.notna(row['Missing']):
+                    for r in row['Reasons']: st.markdown(f"- {r}")
+                    if row['Missing']:
                         st.markdown(t["missing"])
-                        for m in str(row['Missing']).split(" | "): st.markdown(f"- {m}")
+                        for m in row['Missing']: st.markdown(f"- {m}")
         
         st.markdown("---")
         if st.button("🗑️ Clear History Log"):
-            os.remove("job_hunting_log.csv")
+            st.session_state.history_log = [] # Kosongkan memori
             st.rerun()
     else:
         st.info("No history found.")
