@@ -142,14 +142,14 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("⚙️ Settings")
-    query_input = st.text_input(t["role"], "Data Analyst")
-    location_input = st.text_input(t["loc"], "Tangerang")
+    query_input = st.text_input(t["role"], "")
+    location_input = st.text_input(t["loc"], "")
     work_type = st.selectbox(t["work_type"], ["All", "Remote", "Hybrid", "On-site"])
     date_choice = st.selectbox(t["date_posted"], t["date_opts"])
     
     st.markdown("---")
     exclude_input = st.text_input(t["exclude"], "Alcohol, Gambling")
-    min_salary = st.number_input(t["min_sal"], value=11000000, step=1000000)
+    min_salary = st.number_input(t["min_sal"], value=0, step=1000000)
     min_score = st.slider(t["min"], 50, 100, 75)
     
     st.markdown("---")
