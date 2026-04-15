@@ -150,32 +150,46 @@ def fetch_loker(query, location, w_type, date_chip, serp_key):
         search_query = f"{query} {location}"
         if w_type != "All": search_query += f" {w_type}"
         
-        # HAPUS bagian operator minus (-) di sini biar API Google gak bingung
         params = {"engine": "google_jobs", "q": search_query, "hl": "id", "gl": "id", "api_key": serp_key}
         if date_chip: params["chips"] = date_chip
         response = requests.get("https://serpapi.com/search.json", params=params).json()
         
         jobs = []
-        # Daftar situs "calo" yang link-nya suka muter-muter
-        BANNED_SITES = ["jooble", "trovit", "id.kora", "jobisjob", "naukri"] 
         
+        # 1. Daftar Hitam (Calo Loker)
+        BANNED_SITES = ["jooble", "trovit", "kora", "jobisjob", "naukri", "trabajo", "careerjet", "talent.com", "lokerhq"] 
+        # 2. Daftar Putih (Portal Resmi & Terpercaya)
+        PREFERRED_SITES = ["linkedin", "jobstreet", "glints", "kalibrr", "techinasia", "kitalulus", "workable", "lever", "greenhouse"]
+
         if "jobs_results" in response:
             for job in response["jobs_results"]:
-                link = job.get("apply_options", [{}])[0].get("link", "")
+                apply_options = job.get("apply_options", [])
+                best_link = ""
                 
-                # Cek apakah link mengandung nama situs calo
-                is_banned = any(banned in link.lower() for banned in BANNED_SITES)
+                # Strategi A: Cari link dari portal terpercaya dulu (Daftar Putih)
+                for option in apply_options:
+                    link = option.get("link", "").lower()
+                    if any(pref in link for pref in PREFERRED_SITES):
+                        best_link = option.get("link", "") # Ambil link aslinya (bukan yang di-lower)
+                        break 
                 
-                # Kalau link-nya bersih, masukin ke list
-                if not is_banned and link:
+                # Strategi B: Kalau nggak ada di Daftar Putih, ambil link apa aja ASAL BUKAN Daftar Hitam
+                if not best_link:
+                    for option in apply_options:
+                        link = option.get("link", "").lower()
+                        if not any(banned in link for banned in BANNED_SITES):
+                            best_link = option.get("link", "")
+                            break 
+                
+                # Masukkan ke list loker jika berhasil dapat link yang bersih
+                if best_link:
                     jobs.append({
                         "title": job.get("title", ""), 
                         "company": job.get("company_name", ""), 
                         "description": job.get("description", ""), 
-                        "link": link
+                        "link": best_link
                     })
                     
-                # NAIKKIN BATAS JADI 10 (Biar ada cadangan loker kalau banyak yang kena filter calo/duplikat)
                 if len(jobs) >= 10: 
                     break
                     
