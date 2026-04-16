@@ -9,112 +9,68 @@ from datetime import datetime
 from groq import Groq
 
 # ==========================================
-# 🎨 STREAMLIT DASHBOARD UI & TEXT
+# 🎨 CONFIG & THEME
 # ==========================================
-st.set_page_config(page_title="AI Job Hunter Pro", page_icon="💼", layout="wide")
+st.set_page_config(page_title="LokerPilot AI", page_icon="🚀", layout="wide")
 
-TEXT = {
-    "English": {
-        "title": "🤖 Personal AI Job Hunter Pro",
-        "sub": "Automatically find, screen, and filter jobs based on your specific preferences.",
-        "tab_search": "🔍 Search Jobs",
-        "tab_history": "📁 History Log",
-        "role": "Job Role",
-        "loc": "Location",
-        "work_type": "Work Type",
-        "date_posted": "Date Posted",
-        "date_opts": ["Any time", "Past month", "Past week", "Past 3 days", "Past 24 hours"],
-        "exclude": "Excluded Keywords",
-        "min_sal": "Min Monthly Salary",
-        "min": "Minimum Match Score",
-        "cv": "Upload your CV (PDF)",
-        "btn": "🚀 Start Hunting",
-        "err_cv": "⚠️ Please upload your CV PDF first!",
-        "err_api": "⚠️ Please enter your API Keys!",
-        "score_lbl": "Match Score",
-        "reasons": "**✨ Why it's a match:**",
-        "missing": "**⚠️ Missing Skills / Filter Warnings:**",
-        "draft_lbl": "✉️ Email Draft / Cover Letter:",
-        "no_new": "✨ No new jobs found. Check your history."
-    },
-    "Bahasa Indonesia": {
-        "title": "🤖 Personal AI Job Hunter Pro",
-        "sub": "Cari, seleksi, dan filter loker otomatis sesuai kriteria spesifikmu.",
-        "tab_search": "🔍 Cari Loker",
-        "tab_history": "📁 Riwayat Lamaran",
-        "role": "Posisi Pekerjaan",
-        "loc": "Lokasi",
-        "work_type": "Tipe Kerja",
-        "date_posted": "Waktu Posting",
-        "date_opts": ["Semua waktu", "Sebulan terakhir", "Seminggu terakhir", "3 Hari terakhir", "24 Jam terakhir"],
-        "exclude": "Kata Kunci Dihindari",
-        "min_sal": "Target Gaji Minimal",
-        "min": "Minimal Skor Kecocokan",
-        "cv": "Upload CV Kamu (PDF)",
-        "btn": "🚀 Mulai Berburu Loker",
-        "err_cv": "⚠️ Upload CV PDF kamu dulu bro!",
-        "err_api": "⚠️ Masukkan API Key kamu dulu!",
-        "score_lbl": "Skor Kecocokan",
-        "reasons": "**✨ Alasan Cocok:**",
-        "missing": "**⚠️ Kekurangan / Peringatan Filter:**",
-        "draft_lbl": "✉️ Draf Email / Cover Letter:",
-        "no_new": "✨ Tidak ada loker baru. Semua sudah ada di riwayat."
-    }
-}
-
-DATE_MAPPING = {
-    "Any time": "", "Past month": "date_posted:month", "Past week": "date_posted:week", "Past 3 days": "date_posted:3days", "Past 24 hours": "date_posted:today",
-    "Semua waktu": "", "Sebulan terakhir": "date_posted:month", "Seminggu terakhir": "date_posted:week", "3 Hari terakhir": "date_posted:3days", "24 Jam terakhir": "date_posted:today"
+# Master Keys (Ganti sesuka lo bro)
+BETA_KEYS = {
+    "PRO2026": "Standard",
+    "CAPTAIN2026": "VIP"
 }
 
 # ==========================================
-# 🧠 INISIALISASI SESSION STATE (PENGGANTI CSV)
+# 🧠 SESSION STATE
 # ==========================================
 if "history_log" not in st.session_state:
     st.session_state.history_log = []
-
-# ==========================================
-# 🔒 SISTEM LOGIN / BETA KEY
-# ==========================================
-BETA_KEY = "PRO2026"
-
 if "access_granted" not in st.session_state:
     st.session_state.access_granted = False
+if "user_tier" not in st.session_state:
+    st.session_state.user_tier = "Standard"
 if "welcome_shown" not in st.session_state:
     st.session_state.welcome_shown = False
 
+# ==========================================
+# 🔒 LOGIN SYSTEM
+# ==========================================
 if not st.session_state.access_granted:
-    st.title("🔒 Closed Beta Access")
-    st.info("Aplikasi AI Job Hunter Pro saat ini sedang dalam fase pengujian terbatas.")
+    st.title("🚀 LokerPilot: Fly to Your Next Career")
+    st.markdown("### Masukkan Kode Akses Founder's Club")
     
-    pwd_input = st.text_input("Masukkan Kode Akses Beta / Beta Key:", type="password")
-    if st.button("Buka Akses 🚀", use_container_width=True):
-        if pwd_input == BETA_KEY:
+    pwd_input = st.text_input("Beta Key / License Key:", type="password")
+    if st.button("Buka Kokpit ✈️", use_container_width=True):
+        if pwd_input in BETA_KEYS:
             st.session_state.access_granted = True
-            st.success("Akses Diberikan! Memuat aplikasi...")
+            st.session_state.user_tier = BETA_KEYS[pwd_input]
+            st.success(f"Akses {st.session_state.user_tier} Diberikan! Memuat sistem...")
             time.sleep(1)
             st.rerun()
         else:
-            st.error("⚠️ Kode akses salah atau sudah kadaluarsa.")
+            st.error("⚠️ Kode akses salah. Pastikan kamu sudah mendapatkan lisensi dari Mayar.")
     st.stop()
 
 # ==========================================
-# 📖 WELCOME DIALOG (POP-UP PANDUAN)
+# 📖 WELCOME DIALOG
 # ==========================================
-@st.dialog("📖 Panduan Memulai (Read Me First)")
+@st.dialog("📖 Panduan LokerPilot")
 def welcome_dialog():
-    st.markdown("""
-    ### Selamat datang di AI Job Hunter Pro! 🚀
-    Sebelum mulai berburu loker, pastikan kamu sudah menyiapkan **2 Kunci (API Key)** gratis.
+    st.markdown(f"""
+    ### Welcome, {st.session_state.user_tier}! 
+    Kamu masuk menggunakan akses **{st.session_state.user_tier}**.
     
-    1. **🔑 Groq API Key (Mesin AI):** Buka console.groq.com
-    2. **🔑 SerpAPI Key (Mesin Pencari):** Buka serpapi.com
+    **Cara Mulai:**
+    1. Isi **API Keys** (Groq & SerpAPI) di sidebar.
+    2. Masukkan posisi kerja (misal: *Data Analyst*) dan Lokasi.
+    3. Upload CV PDF kamu.
+    4. Klik **Mulai Berburu Loker**.
+    
+    {"✨ **Fitur VIP Aktif:** Kamu punya akses ke Analisa CV Mendalam & ATS Optimizer!" if st.session_state.user_tier == "VIP" else "💡 **Tips:** Upgrade ke VIP untuk analisa CV mendalam."}
     
     ---
-    🔒 **Jaminan Privasi & Keamanan Data:**
-    *Sistem kami 100% menggunakan memori browser lokal (Session State). File CV (PDF) dan riwayat lamaranmu **TIDAK DISIMPAN** di server kami dan tidak bisa dilihat oleh orang lain. Semua data akan otomatis terhapus saat kamu menutup halaman web ini.*
+    🔒 *Data CV & History hanya disimpan di memori browser kamu (Session State). Aman & Privat.*
     """)
-    if st.button("Mengerti & Mulai Berburu!", use_container_width=True):
+    if st.button("Siap, Gas!", use_container_width=True):
         st.session_state.welcome_shown = True
         st.rerun()
 
@@ -122,177 +78,122 @@ if not st.session_state.welcome_shown:
     welcome_dialog()
 
 # ==========================================
-# --- SIDEBAR ---
+# 🛠️ SIDEBAR SETTINGS
 # ==========================================
 with st.sidebar:
-    lang_choice = st.selectbox("🌐 Language", ["English", "Bahasa Indonesia"])
-    t = TEXT[lang_choice]
+    st.title("🎮 Dashboard Kontrol")
+    st.info(f"Status: **{st.session_state.user_tier} Member**")
     
     st.header("🔑 API Keys")
     user_groq_key = st.text_input("Groq API Key", type="password")
     user_serp_key = st.text_input("SerpAPI Key", type="password")
     
     st.markdown("---")
-    st.header("⚙️ Settings")
-    query_input = st.text_input(t["role"], "") # DIKOSONGIN
-    location_input = st.text_input(t["loc"], "") # DIKOSONGIN
-    work_type = st.selectbox(t["work_type"], ["All", "Remote", "Hybrid", "On-site"])
-    date_choice = st.selectbox(t["date_posted"], t["date_opts"])
+    st.header("⚙️ Filter Pencarian")
+    query_input = st.text_input("Posisi Kerja", "")
+    location_input = st.text_input("Lokasi", "")
+    date_choice = st.selectbox("Waktu Posting", ["Semua waktu", "24 Jam terakhir", "3 Hari terakhir", "Seminggu terakhir"])
     
     st.markdown("---")
-    exclude_input = st.text_input(t["exclude"], "Alcohol, Gambling")
-    min_salary = st.number_input(t["min_sal"], value=0, step=1000000) # GAJI DEFAULT 0
-    min_score = st.slider(t["min"], 50, 100, 75)
+    exclude_input = st.text_input("Hindari Kata Kunci", "Alcohol, Gambling, Betting")
+    min_salary = st.number_input("Target Gaji Minimal", value=0, step=1000000)
+    min_score = st.slider("Minimal Skor Cocok", 50, 100, 75)
     
     st.markdown("---")
-    uploaded_cv = st.file_uploader(t["cv"], type=["pdf"])
-    mulai_btn = st.button(t["btn"], use_container_width=True)
+    uploaded_cv = st.file_uploader("Upload CV (PDF)", type=["pdf"])
+    mulai_btn = st.button("🚀 Mulai Berburu Loker", use_container_width=True)
 
 # ==========================================
-# 🧠 FUNGSI AGENT
+# 🧠 AGENT LOGIC
 # ==========================================
-def fetch_loker(query, location, w_type, date_chip, serp_key):
+def fetch_loker(query, location, date_choice, serp_key):
     try:
-        search_query = f"{query} {location}"
-        if w_type != "All": search_query += f" {w_type}"
+        date_map = {"Semua waktu": "", "24 Jam terakhir": "date_posted:today", "3 Hari terakhir": "date_posted:3days", "Seminggu terakhir": "date_posted:week"}
+        params = {"engine": "google_jobs", "q": f"{query} {location}", "hl": "id", "gl": "id", "api_key": serp_key}
+        if date_map[date_choice]: params["chips"] = date_map[date_choice]
         
-        params = {"engine": "google_jobs", "q": search_query, "hl": "id", "gl": "id", "api_key": serp_key}
-        if date_chip: params["chips"] = date_chip
-        response = requests.get("https://serpapi.com/search.json", params=params).json()
-        
+        res = requests.get("https://serpapi.com/search.json", params=params).json()
         jobs = []
-        BANNED_SITES = ["jooble", "trovit", "kora", "jobisjob", "naukri", "trabajo", "careerjet", "talent.com", "lokerhq"] 
-        PREFERRED_SITES = ["linkedin", "jobstreet", "glints", "kalibrr", "techinasia", "kitalulus", "workable", "lever", "greenhouse"]
+        BANNED = ["jooble", "trovit", "trabajo", "jobisjob"]
+        PREF = ["linkedin", "jobstreet", "glints", "kalibrr"]
 
-        if "jobs_results" in response:
-            for job in response["jobs_results"]:
-                apply_options = job.get("apply_options", [])
-                best_link = ""
-                
-                for option in apply_options:
-                    link = option.get("link", "").lower()
-                    if any(pref in link for pref in PREFERRED_SITES):
-                        best_link = option.get("link", "")
-                        break 
-                
-                if not best_link:
-                    for option in apply_options:
-                        link = option.get("link", "").lower()
-                        if not any(banned in link for banned in BANNED_SITES):
-                            best_link = option.get("link", "")
-                            break 
-                
-                if best_link:
-                    jobs.append({
-                        "title": job.get("title", ""), 
-                        "company": job.get("company_name", ""), 
-                        "description": job.get("description", ""), 
-                        "link": best_link
-                    })
-                    
-                if len(jobs) >= 10: break
+        if "jobs_results" in res:
+            for j in res["jobs_results"]:
+                opts = j.get("apply_options", [])
+                link = next((o['link'] for o in opts if any(p in o['link'].lower() for p in PREF)), opts[0]['link'] if opts else "")
+                if link and not any(b in link.lower() for b in BANNED):
+                    jobs.append({"title": j['title'], "company": j['company_name'], "desc": j['description'], "link": link})
+                if len(jobs) >= 8: break
         return jobs
     except: return []
 
-def screening_agent(job_desc, cv_text, language, excluded, min_sal, groq_key):
+def screening_agent(job_desc, cv_text, excluded, min_sal, groq_key):
     try:
         client = Groq(api_key=groq_key)
-        prompt = f"Analyze Job vs CV. JSON ONLY: {{'score': 0-100, 'reasons': [], 'missing': []}}. Exclude: {excluded}. Min Sal: {min_sal}. Language: {language}. Job: {job_desc}. CV: {cv_text}"
-        chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.2)
-        match = re.search(r'\{.*\}', chat.choices[0].message.content, re.DOTALL)
-        return json.loads(match.group(0)) if match else {"score": 0, "reasons": [], "missing": []}
-    except: return {"score": 0, "reasons": ["Error AI Connection"], "missing": []}
+        prompt = f"Analyze Job vs CV. Return JSON ONLY: {{'score': 0-100, 'reasons': [], 'missing': []}}. Exclude: {excluded}. Min Sal: {min_sal}. Job: {job_desc}. CV: {cv_text}"
+        chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.1)
+        return json.loads(re.search(r'\{.*\}', chat.choices[0].message.content, re.DOTALL).group(0))
+    except: return {"score": 0, "reasons": ["AI Error"], "missing": []}
 
-def drafting_agent(job_desc, reasons, language, groq_key):
+def vip_consultant_agent(job_desc, cv_text, groq_key):
     try:
         client = Groq(api_key=groq_key)
-        prompt = f"Write professional email in {language} for this job: {job_desc}. Matching points: {reasons}. Under 150 words."
-        chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.5)
-        return chat.choices[0].message.content.strip()
-    except: return "⚠️ Error generating draft."
+        prompt = f"""Bertindaklah sebagai Senior HR Manager. Berikan analisa CV mendalam untuk posisi ini:
+        1. 3 Keyword ATS yang WAJIB ditambah ke CV.
+        2. Tulis ulang 1 poin pengalaman kerja agar lebih 'Powerfull' (Result-Oriented).
+        3. 1 Pertanyaan interview tersulit yang mungkin muncul.
+        Job: {job_desc} | CV: {cv_text}"""
+        chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.4)
+        return chat.choices[0].message.content
+    except: return "Layanan VIP sedang sibuk."
 
 # ==========================================
-# 🚀 MAIN AREA (TABBED VIEW)
+# 🚀 MAIN VIEW
 # ==========================================
-st.title(t["title"])
-tab1, tab2 = st.tabs([t["tab_search"], t["tab_history"]])
+tab1, tab2 = st.tabs(["🔍 Cari Loker", "📁 Riwayat"])
 
 with tab1:
     if mulai_btn:
-        if not user_groq_key or not user_serp_key: 
-            st.error(t["err_api"])
-        elif not uploaded_cv: 
-            st.error(t["err_cv"])
+        if not user_groq_key or not user_serp_key: st.error("Isi API Keys dulu bro!")
+        elif not uploaded_cv: st.error("Upload CV dulu!")
         else:
-            reader = PyPDF2.PdfReader(uploaded_cv)
-            cv_text = "".join([p.extract_text() for p in reader.pages])
+            cv_text = "".join([p.extract_text() for p in PyPDF2.PdfReader(uploaded_cv).pages])
+            seen = {log['Link'] for log in st.session_state.history_log}
             
-            # --- CEK ANTI-DUPLIKAT DARI SESSION STATE ---
-            seen_links = {log['Link'] for log in st.session_state.history_log}
+            st.info("Sedang memindai langit lowongan kerja...")
+            loker_list = [j for j in fetch_loker(query_input, location_input, date_choice, user_serp_key) if j['link'] not in seen]
             
-            st.info(f"🔍 Searching for {query_input}...")
-            selected_date_chip = DATE_MAPPING[date_choice]
-            loker_raw = fetch_loker(query_input, location_input, work_type, selected_date_chip, user_serp_key)
-            loker_list = [j for j in loker_raw if j['link'] not in seen_links]
-            
-            if not loker_list: 
-                st.warning(t["no_new"])
+            if not loker_list: st.warning("Belum ada loker baru. Coba ganti lokasi atau posisi.")
             else:
                 for loker in loker_list:
                     with st.expander(f"🏢 {loker['title']} - {loker['company']}", expanded=True):
-                        with st.spinner("Analyzing..."):
-                            time.sleep(2)
-                            hasil = screening_agent(loker['description'], cv_text, lang_choice, exclude_input, min_salary, user_groq_key)
-                            skor = int(hasil.get('score', 0))
+                        hasil = screening_agent(loker['desc'], cv_text, exclude_input, min_salary, user_groq_key)
+                        skor = int(hasil.get('score', 0))
                         
-                        col1, col2 = st.columns([1, 2])
-                        with col1:
-                            st.metric(t["score_lbl"], f"{skor}/100")
-                            st.markdown(f"🔗 [Apply Here]({loker['link']})")
-                        with col2:
-                            st.markdown(t["reasons"])
+                        c1, c2 = st.columns([1, 2])
+                        with c1:
+                            st.metric("Match Score", f"{skor}/100")
+                            st.markdown(f"🔗 [Lamar Sekarang]({loker['link']})")
+                        with c2:
+                            st.markdown("**Alasan Cocok:**")
                             for r in hasil.get('reasons', []): st.markdown(f"- {r}")
-                            if hasil.get('missing'):
-                                st.markdown(t["missing"])
-                                for m in hasil.get('missing', []): st.markdown(f"- {m}")
                         
-                        if skor >= min_score and skor > 0:
-                            # --- SIMPAN KE SESSION STATE (MEMORI LOKAL) ---
-                            st.session_state.history_log.append({
-                                "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                "Company": loker['company'],
-                                "Position": loker['title'],
-                                "Score": skor,
-                                "Reasons": hasil.get('reasons', []),
-                                "Missing": hasil.get('missing', []),
-                                "Link": loker['link']
-                            })
-                            
-                            with st.spinner("Drafting..."):
-                                draf = drafting_agent(loker['description'], hasil.get('reasons'), lang_choice, user_groq_key)
-                                st.text_area(t["draft_lbl"], value=draf, height=150)
+                        # FITUR VIP
+                        if st.session_state.user_tier == "VIP" and skor >= min_score:
+                            st.markdown("---")
+                            st.markdown("### 💎 VIP Analysis (ATS & Career Advice)")
+                            with st.spinner("Konsultan AI sedang membedah CV kamu..."):
+                                saran = vip_consultant_agent(loker['desc'], cv_text, user_groq_key)
+                                st.write(saran)
+                        
+                        if skor >= min_score:
+                            st.session_state.history_log.append({"Date": datetime.now().strftime("%H:%M"), "Company": loker['company'], "Position": loker['title'], "Score": skor, "Link": loker['link']})
 
 with tab2:
-    st.subheader(t["tab_history"])
-    # --- BACA DARI SESSION STATE ---
     if st.session_state.history_log:
-        # Menampilkan history dari yang terbaru (reverse)
-        for row in reversed(st.session_state.history_log):
-            with st.expander(f"📌 {row['Position']} at {row['Company']} ({row['Date']})"):
-                c1, c2 = st.columns([1, 2])
-                with c1:
-                    st.metric(t["score_lbl"], f"{row['Score']}/100")
-                    st.markdown(f"🔗 [View Job & Apply]({row['Link']})")
-                with c2:
-                    st.markdown(t["reasons"])
-                    for r in row['Reasons']: st.markdown(f"- {r}")
-                    if row['Missing']:
-                        st.markdown(t["missing"])
-                        for m in row['Missing']: st.markdown(f"- {m}")
-        
-        st.markdown("---")
-        if st.button("🗑️ Clear History Log"):
-            st.session_state.history_log = [] # Kosongkan memori
+        for item in reversed(st.session_state.history_log):
+            st.write(f"✅ **{item['Position']}** di {item['Company']} (Score: {item['Score']}) - [Link]({item['Link']})")
+        if st.button("Hapus Riwayat"):
+            st.session_state.history_log = []
             st.rerun()
-    else:
-        st.info("No history found.")
+    else: st.info("Belum ada riwayat pencarian.")
