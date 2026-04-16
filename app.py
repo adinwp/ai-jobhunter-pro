@@ -13,10 +13,64 @@ from groq import Groq
 # ==========================================
 st.set_page_config(page_title="LokerPilot AI", page_icon="🚀", layout="wide")
 
-# Master Keys (Ganti sesuka lo bro)
+# Master Keys
 BETA_KEYS = {
-    "PRO2026": "Standard",
+    "PILOT2026": "Standard",
     "CAPTAIN2026": "VIP"
+}
+
+# ==========================================
+# 🌐 DICTIONARY BAHASA
+# ==========================================
+TEXT = {
+    "English": {
+        "title": "🚀 LokerPilot AI",
+        "tab_search": "🔍 Search Jobs",
+        "tab_history": "📁 History",
+        "role": "Job Role",
+        "loc": "Location",
+        "date_posted": "Date Posted",
+        "date_opts": ["Any time", "Past 24 hours", "Past 3 days", "Past week"],
+        "exclude": "Excluded Keywords",
+        "min_sal": "Min Monthly Salary",
+        "min_score": "Min Match Score",
+        "cv": "Upload CV (PDF)",
+        "btn": "🚀 Start Hunting",
+        "score_lbl": "Match Score",
+        "apply_btn": "Apply Here",
+        "reasons": "**✨ Match Reasons:**",
+        "missing": "**⚠️ Missing Skills:**",
+        "draft_lbl": "✉️ Cover Letter / Email Draft:",
+        "low_score": "Score too low for auto-drafting.",
+        "spin_search": "Scanning the horizon for jobs...",
+        "spin_analyze": "Analyzing fit...",
+        "spin_draft": "Writing cover letter...",
+        "spin_vip": "VIP Consultant analyzing CV..."
+    },
+    "Bahasa Indonesia": {
+        "title": "🚀 LokerPilot AI",
+        "tab_search": "🔍 Cari Loker",
+        "tab_history": "📁 Riwayat",
+        "role": "Posisi Pekerjaan",
+        "loc": "Lokasi",
+        "date_posted": "Waktu Posting",
+        "date_opts": ["Semua waktu", "24 Jam terakhir", "3 Hari terakhir", "Seminggu terakhir"],
+        "exclude": "Hindari Kata Kunci",
+        "min_sal": "Target Gaji Minimal",
+        "min_score": "Minimal Skor Cocok",
+        "cv": "Upload CV Kamu (PDF)",
+        "btn": "🚀 Mulai Berburu Loker",
+        "score_lbl": "Skor Kecocokan",
+        "apply_btn": "Lamar Sekarang",
+        "reasons": "**✨ Alasan Cocok:**",
+        "missing": "**⚠️ Kekurangan di CV:**",
+        "draft_lbl": "✉️ Draf Email / Cover Letter:",
+        "low_score": "Skor terlalu rendah untuk dibuatkan draf.",
+        "spin_search": "Memindai langit lowongan kerja...",
+        "spin_analyze": "Menganalisa kecocokan...",
+        "spin_draft": "Menulis draf lamaran...",
+        "spin_vip": "Konsultan VIP sedang membedah CV..."
+    }
 }
 
 # ==========================================
@@ -60,15 +114,11 @@ def welcome_dialog():
     Kamu masuk menggunakan akses **{st.session_state.user_tier}**.
     
     **Cara Mulai:**
-    1. Isi **API Keys** (Groq & SerpAPI) di sidebar.
-    2. Masukkan posisi kerja (misal: *Data Analyst*) dan Lokasi.
-    3. Upload CV PDF kamu.
-    4. Klik **Mulai Berburu Loker**.
+    1. Isi **API Keys** di sidebar.
+    2. Masukkan kriteria loker dan Upload CV PDF kamu.
+    3. Klik **Mulai Berburu Loker**.
     
-    {"✨ **Fitur VIP Aktif:** Kamu punya akses ke Analisa CV Mendalam & ATS Optimizer!" if st.session_state.user_tier == "VIP" else "💡 **Tips:** Upgrade ke VIP untuk analisa CV mendalam."}
-    
-    ---
-    🔒 *Data CV & History hanya disimpan di memori browser kamu (Session State). Aman & Privat.*
+    {"✨ **Fitur VIP Aktif:** Kamu punya akses ke Analisa CV Mendalam & ATS Optimizer!" if st.session_state.user_tier == "VIP" else "💡 **Tips:** Upgrade ke paket Captain (VIP) untuk analisa CV mendalam."}
     """)
     if st.button("Siap, Gas!", use_container_width=True):
         st.session_state.welcome_shown = True
@@ -84,38 +134,41 @@ with st.sidebar:
     st.title("🎮 Dashboard Kontrol")
     st.info(f"Status: **{st.session_state.user_tier} Member**")
     
+    lang_choice = st.selectbox("🌐 Language", ["Bahasa Indonesia", "English"])
+    t = TEXT[lang_choice]
+    
     st.header("🔑 API Keys")
     user_groq_key = st.text_input("Groq API Key", type="password")
     user_serp_key = st.text_input("SerpAPI Key", type="password")
     
     st.markdown("---")
     st.header("⚙️ Filter Pencarian")
-    query_input = st.text_input("Posisi Kerja", "")
-    location_input = st.text_input("Lokasi", "")
-    date_choice = st.selectbox("Waktu Posting", ["Semua waktu", "24 Jam terakhir", "3 Hari terakhir", "Seminggu terakhir"])
+    query_input = st.text_input(t["role"], "")
+    location_input = st.text_input(t["loc"], "")
+    date_choice = st.selectbox(t["date_posted"], t["date_opts"])
     
     st.markdown("---")
-    exclude_input = st.text_input("Hindari Kata Kunci", "Alcohol, Gambling, Betting")
-    min_salary = st.number_input("Target Gaji Minimal", value=0, step=1000000)
-    min_score = st.slider("Minimal Skor Cocok", 50, 100, 75)
+    exclude_input = st.text_input(t["exclude"], "Alcohol, Gambling, Betting")
+    min_salary = st.number_input(t["min_sal"], value=0, step=1000000)
+    min_score = st.slider(t["min_score"], 50, 100, 75)
     
     st.markdown("---")
-    uploaded_cv = st.file_uploader("Upload CV (PDF)", type=["pdf"])
-    mulai_btn = st.button("🚀 Mulai Berburu Loker", use_container_width=True)
+    uploaded_cv = st.file_uploader(t["cv"], type=["pdf"])
+    mulai_btn = st.button(t["btn"], use_container_width=True)
 
 # ==========================================
 # 🧠 AGENT LOGIC
 # ==========================================
 def fetch_loker(query, location, date_choice, serp_key):
     try:
-        date_map = {"Semua waktu": "", "24 Jam terakhir": "date_posted:today", "3 Hari terakhir": "date_posted:3days", "Seminggu terakhir": "date_posted:week"}
+        date_map = {"Semua waktu": "", "24 Jam terakhir": "date_posted:today", "3 Hari terakhir": "date_posted:3days", "Seminggu terakhir": "date_posted:week", "Any time": "", "Past 24 hours": "date_posted:today", "Past 3 days": "date_posted:3days", "Past week": "date_posted:week"}
         params = {"engine": "google_jobs", "q": f"{query} {location}", "hl": "id", "gl": "id", "api_key": serp_key}
-        if date_map[date_choice]: params["chips"] = date_map[date_choice]
+        if date_map.get(date_choice): params["chips"] = date_map[date_choice]
         
         res = requests.get("https://serpapi.com/search.json", params=params).json()
         jobs = []
         BANNED = ["jooble", "trovit", "trabajo", "jobisjob"]
-        PREF = ["linkedin", "jobstreet", "glints", "kalibrr"]
+        PREF = ["linkedin", "jobstreet", "glints", "kalibrr", "kitalulus", "techinasia"]
 
         if "jobs_results" in res:
             for j in res["jobs_results"]:
@@ -123,69 +176,101 @@ def fetch_loker(query, location, date_choice, serp_key):
                 link = next((o['link'] for o in opts if any(p in o['link'].lower() for p in PREF)), opts[0]['link'] if opts else "")
                 if link and not any(b in link.lower() for b in BANNED):
                     jobs.append({"title": j['title'], "company": j['company_name'], "desc": j['description'], "link": link})
-                if len(jobs) >= 8: break
+                if len(jobs) >= 6: break
         return jobs
     except: return []
 
-def screening_agent(job_desc, cv_text, excluded, min_sal, groq_key):
+def screening_agent(job_desc, cv_text, excluded, min_sal, lang, groq_key):
     try:
         client = Groq(api_key=groq_key)
-        prompt = f"Analyze Job vs CV. Return JSON ONLY: {{'score': 0-100, 'reasons': [], 'missing': []}}. Exclude: {excluded}. Min Sal: {min_sal}. Job: {job_desc}. CV: {cv_text}"
+        prompt = f"Analyze Job vs CV. Return JSON ONLY: {{'score': 0-100, 'reasons': [], 'missing': []}}. Respond in {lang}. Exclude: {excluded}. Min Sal: {min_sal}. Job: {job_desc}. CV: {cv_text}"
         chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.1)
         return json.loads(re.search(r'\{.*\}', chat.choices[0].message.content, re.DOTALL).group(0))
     except: return {"score": 0, "reasons": ["AI Error"], "missing": []}
 
-def vip_consultant_agent(job_desc, cv_text, groq_key):
+def drafting_agent(job_desc, reasons, lang, groq_key):
     try:
         client = Groq(api_key=groq_key)
-        prompt = f"""Bertindaklah sebagai Senior HR Manager. Berikan analisa CV mendalam untuk posisi ini:
-        1. 3 Keyword ATS yang WAJIB ditambah ke CV.
-        2. Tulis ulang 1 poin pengalaman kerja agar lebih 'Powerfull' (Result-Oriented).
-        3. 1 Pertanyaan interview tersulit yang mungkin muncul.
+        prompt = f"Write a professional cover letter/email in {lang} for this job based on these matching points: {reasons}. Keep it under 150 words. Job: {job_desc}"
+        chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.5)
+        return chat.choices[0].message.content.strip()
+    except: return "⚠️ Error generating draft."
+
+def vip_consultant_agent(job_desc, cv_text, lang, groq_key):
+    try:
+        client = Groq(api_key=groq_key)
+        prompt = f"""Act as a Senior HR Manager. Respond in {lang}. Analyze this CV against the Job Desc.
+        Format your response cleanly with markdown:
+        1. **3 ATS Keywords** missing from the CV.
+        2. **Rewrite 1 Work Experience Bullet** to be more Result-Oriented.
+        3. **1 Tough Interview Question** to prepare for.
         Job: {job_desc} | CV: {cv_text}"""
         chat = client.chat.completions.create(messages=[{"role": "user", "content": prompt}], model="llama-3.1-8b-instant", temperature=0.4)
         return chat.choices[0].message.content
-    except: return "Layanan VIP sedang sibuk."
+    except: return "⚠️ Layanan VIP sedang sibuk / VIP Service busy."
 
 # ==========================================
 # 🚀 MAIN VIEW
 # ==========================================
-tab1, tab2 = st.tabs(["🔍 Cari Loker", "📁 Riwayat"])
+st.title(t["title"])
+tab1, tab2 = st.tabs([t["tab_search"], t["tab_history"]])
 
 with tab1:
     if mulai_btn:
-        if not user_groq_key or not user_serp_key: st.error("Isi API Keys dulu bro!")
-        elif not uploaded_cv: st.error("Upload CV dulu!")
+        if not user_groq_key or not user_serp_key: st.error("⚠️ Masukkan API Keys!")
+        elif not uploaded_cv: st.error("⚠️ Upload CV!")
         else:
             cv_text = "".join([p.extract_text() for p in PyPDF2.PdfReader(uploaded_cv).pages])
             seen = {log['Link'] for log in st.session_state.history_log}
             
-            st.info("Sedang memindai langit lowongan kerja...")
+            st.info(t["spin_search"])
             loker_list = [j for j in fetch_loker(query_input, location_input, date_choice, user_serp_key) if j['link'] not in seen]
             
-            if not loker_list: st.warning("Belum ada loker baru. Coba ganti lokasi atau posisi.")
+            if not loker_list: st.warning("Belum ada loker baru / No new jobs. Coba ganti lokasi atau posisi.")
             else:
                 for loker in loker_list:
                     with st.expander(f"🏢 {loker['title']} - {loker['company']}", expanded=True):
-                        hasil = screening_agent(loker['desc'], cv_text, exclude_input, min_salary, user_groq_key)
-                        skor = int(hasil.get('score', 0))
                         
-                        c1, c2 = st.columns([1, 2])
+                        with st.spinner(t["spin_analyze"]):
+                            hasil = screening_agent(loker['desc'], cv_text, exclude_input, min_salary, lang_choice, user_groq_key)
+                            skor = int(hasil.get('score', 0))
+                        
+                        # --- 3 KOLOM LAYOUT ---
+                        c1, c2, c3 = st.columns([1, 1.5, 1.5]) # Pembagian proporsi lebar kolom
+                        
+                        # KOLOM 1: SKOR & ALASAN
                         with c1:
-                            st.metric("Match Score", f"{skor}/100")
-                            st.markdown(f"🔗 [Lamar Sekarang]({loker['link']})")
-                        with c2:
-                            st.markdown("**Alasan Cocok:**")
+                            st.metric(t["score_lbl"], f"{skor}/100")
+                            st.markdown(f"🔗 **[{t['apply_btn']}]({loker['link']})**")
+                            st.markdown(t["reasons"])
                             for r in hasil.get('reasons', []): st.markdown(f"- {r}")
+                            if hasil.get('missing'):
+                                st.markdown(t["missing"])
+                                for m in hasil.get('missing', []): st.markdown(f"- {m}")
                         
-                        # FITUR VIP
-                        if st.session_state.user_tier == "VIP" and skor >= min_score:
-                            st.markdown("---")
-                            st.markdown("### 💎 VIP Analysis (ATS & Career Advice)")
-                            with st.spinner("Konsultan AI sedang membedah CV kamu..."):
-                                saran = vip_consultant_agent(loker['desc'], cv_text, user_groq_key)
-                                st.write(saran)
+                        # KOLOM 2: DRAF EMAIL
+                        with c2:
+                            if skor >= min_score:
+                                with st.spinner(t["spin_draft"]):
+                                    draf = drafting_agent(loker['desc'], hasil.get('reasons'), lang_choice, user_groq_key)
+                                    # Height 350 biar kotaknya besar dan enak dibaca
+                                    st.text_area(t["draft_lbl"], value=draf, height=350, key=f"draft_{loker['link']}") 
+                            else:
+                                st.warning(t["low_score"])
                         
+                        # KOLOM 3: VIP ANALYSIS
+                        with c3:
+                            if skor >= min_score:
+                                if st.session_state.user_tier == "VIP":
+                                    st.markdown("### 💎 VIP CV Review")
+                                    with st.spinner(t["spin_vip"]):
+                                        saran = vip_consultant_agent(loker['desc'], cv_text, lang_choice, user_groq_key)
+                                        st.write(saran)
+                                else:
+                                    st.markdown("### 💎 VIP CV Review")
+                                    st.info("🔒 **Fitur Terkunci.**\n\nUpgrade Lisensi kamu ke paket **Captain (VIP)** untuk mendapatkan Bedah CV Mendalam, Optimasi Keyword ATS, dan Prediksi Interview di sini.")
+                        
+                        # Simpan ke riwayat
                         if skor >= min_score:
                             st.session_state.history_log.append({"Date": datetime.now().strftime("%H:%M"), "Company": loker['company'], "Position": loker['title'], "Score": skor, "Link": loker['link']})
 
@@ -193,7 +278,7 @@ with tab2:
     if st.session_state.history_log:
         for item in reversed(st.session_state.history_log):
             st.write(f"✅ **{item['Position']}** di {item['Company']} (Score: {item['Score']}) - [Link]({item['Link']})")
-        if st.button("Hapus Riwayat"):
+        if st.button("Hapus Riwayat / Clear History"):
             st.session_state.history_log = []
             st.rerun()
-    else: st.info("Belum ada riwayat pencarian.")
+    else: st.info("Belum ada riwayat pencarian / No history.")
